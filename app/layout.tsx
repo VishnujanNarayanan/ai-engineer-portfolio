@@ -10,11 +10,14 @@ export const metadata: Metadata = {
   description:
     'Vishnujan Narayanan is a Full-Stack Machine Learning Engineer specializing in AI systems, data pipelines, and intelligent applications.',
   metadataBase: new URL('https://vishnujan-narayanan.vercel.app'),
+  alternates: {
+    canonical: 'https://vishnujan-narayanan.vercel.app',
+  },
   openGraph: {
     title: 'Vishnujan Narayanan | Full-Stack ML Engineer',
     description:
       'Building intelligent systems, scalable data pipelines, and applied machine learning solutions.',
-    url: 'https://vishnujan-narayanan.vercel.app/',
+    url: 'https://vishnujan-narayanan.vercel.app',
     siteName: 'Vishnujan Narayanan',
     type: 'website',
   },
@@ -27,8 +30,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <head>
-        {/* Structured Data for Google */}
+      <body className={`${inter.className} bg-white text-gray-900`}>
+        {/* ✅ Structured data (safe placement) */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -49,16 +52,13 @@ export default function RootLayout({
             }),
           }}
         />
-      </head>
 
-      <body className={`${inter.className} bg-white text-gray-900`}>
         <Header />
 
         <main className="min-h-screen">
           {children}
         </main>
 
-        {/* ✅ SEO + Identity Footer */}
         <footer className="border-t border-gray-200 py-8">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-600">
             <p className="font-medium">
