@@ -100,20 +100,34 @@ body {
 }
 
 /* =========================================== */
-/* CRITICAL FIXES */
+/* CRITICAL FIXES - UPDATED */
 /* =========================================== */
 
-/* Projects grid - prevent vertical movement */
+/* Projects grid - FIXED: Remove fixed row height */
 .projects-grid {
   position: relative;
   display: grid;
-  grid-auto-rows: minmax(380px, auto);
+  /* REMOVED: grid-auto-rows: minmax(380px, auto) !important; */
+  grid-template-rows: auto; /* Let content determine height */
 }
 
-/* Card wrapper */
+/* Card wrapper - FIXED: Start with compact height */
 .card-wrapper {
   position: relative;
-  height: 100%;
+  height: auto; /* Auto height */
+  min-height: 240px; /* Compact height */
+  transition: min-height 0.3s ease;
+  overflow: visible !important;
+}
+
+/* When card is hovered (but not expanded) */
+.card-wrapper:not(.expanded):hover {
+  min-height: 360px;
+}
+
+/* When card is expanded */
+.card-wrapper.expanded {
+  min-height: 500px;
 }
 
 /* =========================================== */
@@ -122,8 +136,8 @@ body {
 
 /* When TOP ROW card expands, bottom row moves up UNDER it */
 .projects-grid:has(.top-row.expanded) > div:nth-child(n+4) {
-  margin-top: -320px !important;
-  z-index: 10 !important; /* Under expanded card */
+  margin-top: -260px !important; /* Reduced movement */
+  z-index: 10 !important;
 }
 
 /* Top row expanded card should be on top */
@@ -142,10 +156,9 @@ body {
 
 /* BOTTOM ROW cards - NO VERTICAL MOVEMENT when they expand */
 .bottom-row.expanded {
-  z-index: 150 !important; /* Highest z-index */
+  z-index: 150 !important;
 }
 
-/* When BOTTOM ROW card expands, it stays in place */
 .bottom-row.expanded .card-transition {
   z-index: 150 !important;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
@@ -153,38 +166,46 @@ body {
 
 /* IMPORTANT: When BOTTOM ROW expands, top row should NOT move */
 .projects-grid:has(.bottom-row.expanded) > div:nth-child(-n+3) {
-  margin-top: 0 !important; /* Top row stays in place */
+  margin-top: 0 !important;
 }
 
 /* =========================================== */
-/* FIX: HOVER INDICATOR POSITION */
+/* FIX 3: HOVER INDICATOR POSITION - UPDATED */
 /* =========================================== */
 
-/* Hover indicator - positioned right at card bottom */
-.card-wrapper .absolute[class*="translate-y-1/2"] {
-  /* This positions it so half is below the card */
+/* Hover indicator - positioned at actual card bottom */
+.card-wrapper .absolute[class*="animate-fade-in"]:not(.hover-indicator) {
+  /* For existing indicators with -bottom-3 */
+  bottom: -12px;
   z-index: 5;
   pointer-events: none;
 }
 
-/* Make sure the card has enough bottom padding for the indicator */
-.card-transition {
-  padding-bottom: 4px; /* Add a little space for the indicator */
-}
-
-/* When indicator is visible, ensure it doesn't get clipped */
-.card-wrapper {
-  overflow: visible !important;
+/* New hover indicator class for precise positioning */
+.hover-indicator {
+  position: absolute;
+  top: 100%; /* Position at bottom of card */
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 4px; /* Small gap */
+  z-index: 5;
+  pointer-events: none;
 }
 
 /* Hide indicator when card is hovered or expanded */
-.card-wrapper:hover .absolute[class*="translate-y-1/2"],
-.card-wrapper.expanded .absolute[class*="translate-y-1/2"] {
+.card-wrapper:hover .hover-indicator,
+.card-wrapper.expanded .hover-indicator,
+.card-wrapper:hover .absolute[class*="animate-fade-in"],
+.card-wrapper.expanded .absolute[class*="animate-fade-in"] {
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.2s ease, visibility 0.2s ease;
 }
 
+/* Ensure cards don't clip content */
+.card-wrapper {
+  overflow: visible !important;
+}
 
 /* =========================================== */
 /* Z-INDEX UTILITIES */

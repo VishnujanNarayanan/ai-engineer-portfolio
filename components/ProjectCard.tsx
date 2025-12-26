@@ -65,13 +65,10 @@ const colorClasses = {
 
 type ColorKey = keyof typeof colorClasses
 
-// ... (keep all imports and color classes the same as before) ...
-
 export default function ProjectCard({ project, index, totalCards = 3, row = 0 }: ProjectCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
   
   const [primaryColor, setPrimaryColor] = useState<ColorKey>('blue')
   
@@ -159,6 +156,13 @@ export default function ProjectCard({ project, index, totalCards = 3, row = 0 }:
     return baseStyles
   }
 
+  // Get the actual card height for hover indicator positioning
+  const getCardHeight = () => {
+    if (isExpanded) return 'auto'
+    if (isHovering) return '360px'
+    return '240px'
+  }
+
   useEffect(() => {
     if (isExpanded && cardRef.current) {
       const cardRect = cardRef.current.getBoundingClientRect()
@@ -179,22 +183,30 @@ export default function ProjectCard({ project, index, totalCards = 3, row = 0 }:
 
   return (
     <div 
-      ref={containerRef}
       className={`relative card-wrapper ${isExpanded ? 'expanded' : ''} ${row > 0 ? 'bottom-row' : 'top-row'}`}
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       data-row={row}
+      style={{
+        // NO fixed min-height here - let card content determine height
+        height: 'auto',
+      }}
     >
       <div 
         ref={cardRef}
         className={`bg-gray-900 rounded-2xl border ${colors.border} transition-all duration-300 card-transition ${
           isExpanded 
-            ? 'scale-105 shadow-2xl min-h-[500px]' 
+            ? 'scale-105 shadow-2xl' 
             : isHovering 
-            ? 'scale-[1.02] shadow-lg min-h-[360px]' 
-            : 'shadow-sm min-h-[240px]'
+            ? 'scale-[1.02] shadow-lg' 
+            : 'shadow-sm'
         }`}
-        style={getExpansionStyles()}
+        style={{
+          ...getExpansionStyles(),
+          // Dynamic height based on state
+          minHeight: getCardHeight(),
+          overflow: 'hidden',
+        }}
         onMouseLeave={handleMouseLeaveExpanded}
       >
         <div className={`h-1.5 rounded-t-2xl bg-gradient-to-r ${colors.gradient}`} />
@@ -337,9 +349,15 @@ export default function ProjectCard({ project, index, totalCards = 3, row = 0 }:
         )}
       </div>
 
-      {/* Hover Indicator - FIXED: Position it right at the card bottom */}
+      {/* Hover Indicator - Positioned at ACTUAL card bottom, not expanded position */}
       {!isExpanded && !isHovering && (
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 animate-fade-in">
+        <div 
+          className="absolute left-1/2 transform -translate-x-1/2 animate-fade-in hover-indicator"
+          style={{
+            top: '100%', // Position at bottom of actual card
+            marginTop: '4px', // Small gap
+          }}
+        >
           <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gray-700 text-white text-xs font-medium shadow-lg whitespace-nowrap">
             <EyeIcon className="h-3 w-3" />
             <span>Hover to view tools</span>
