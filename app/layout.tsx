@@ -2,6 +2,7 @@
 import { Inter } from 'next/font/google'
 import './globals.css'
 import Header from '@/components/Header'
+import Footer from '@/components/Footer' // Add this import
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -45,9 +46,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${inter.className} bg-white text-gray-900`}>
-
-        {/* ✅ Structured Data for SEO */}
+      <body className={`${inter.className} bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200`}>
+        {/* Structured Data for SEO */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -70,42 +70,12 @@ export default function RootLayout({
         />
 
         <Header />
-
+        
         <main className="min-h-screen">
           {children}
         </main>
-
-        <footer className="border-t border-gray-200 py-8">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-600">
-            <p className="font-medium">
-              © {new Date().getFullYear()} Vishnujan Narayanan
-            </p>
-
-            <p className="mt-2 text-sm">
-              Full-Stack Machine Learning Engineer · AI · Data · Systems
-            </p>
-
-            <div className="mt-3 flex justify-center gap-6 text-sm">
-              <a
-                href="https://github.com/VishnujanNarayanan"
-                className="hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                GitHub
-              </a>
-
-              <a
-                href="https://www.linkedin.com/in/vishnujan-narayanan"
-                className="hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                LinkedIn
-              </a>
-            </div>
-          </div>
-        </footer>
+        
+        <Footer /> {/* Replace old footer with component */}
       </body>
     </html>
   )
