@@ -20,6 +20,9 @@ interface ProjectCardProps {
   isMobileExpanded?: boolean
   onMobileTap?: () => void
   resetExpandedMobile?: () => void
+  // Add these new props
+  isTapped?: boolean
+  onTapToggle?: (projectId: number) => void
 }
 
 const colorClasses = {
@@ -76,19 +79,23 @@ export default function ProjectCard({
   row = 0,
   isMobileExpanded = false,
   onMobileTap,
-  resetExpandedMobile
+  resetExpandedMobile,
+  // New props for permanent tap state
+  isTapped = false,
+  onTapToggle
 }: ProjectCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false)
-  const [localMobileExpanded, setLocalMobileExpanded] = useState(false)
   const [primaryColor, setPrimaryColor] = useState<ColorKey>('blue')
   const cardRef = useRef<HTMLDivElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
-  const mobileCardRef = useRef<HTMLDivElement>(null)
   
-  // Use prop if provided, otherwise use local state
-  const mobileExpanded = onMobileTap ? isMobileExpanded : localMobileExpanded
+  // Use the new isTapped prop for permanent tap state
+  const [localTapped, setLocalTapped] = useState(false)
+  
+  // Determine if card is tapped (permanently)
+  const isCardTapped = onTapToggle ? isTapped : localTapped
   
   useEffect(() => {
     const colors: ColorKey[] = ['blue', 'purple', 'cyan', 'green', 'orange', 'pink']
@@ -114,25 +121,27 @@ export default function ProjectCard({
     }
   }
 
-  const handleMobileTap = () => {
-    if (onMobileTap) {
+  const handleMobileTap = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    
+    if (onTapToggle) {
       // Use parent-controlled state
-      onMobileTap()
+      onTapToggle(project.id)
     } else {
       // Use local state
-      setLocalMobileExpanded(!localMobileExpanded)
+      setLocalTapped(!localTapped)
+    }
+    
+    // Also handle the old prop for backward compatibility
+    if (onMobileTap) {
+      onMobileTap()
     }
   }
 
   const handleOpenMobileDialog = (e: React.MouseEvent) => {
     e.stopPropagation()
     setIsMobileDialogOpen(true)
-    // Collapse when opening dialog
-    if (onMobileTap && resetExpandedMobile) {
-      resetExpandedMobile()
-    } else {
-      setLocalMobileExpanded(false)
-    }
   }
 
   const handleMouseLeaveExpanded = () => {
@@ -206,6 +215,11 @@ export default function ProjectCard({
     if (isExpanded) return 'auto'
     if (isHovering) return '360px'
     return '240px'
+  }
+
+  const getMobileCardHeight = () => {
+    // Always return expanded height if tapped, otherwise default height
+    return isCardTapped ? '360px' : '240px'
   }
 
   useEffect(() => {
@@ -341,7 +355,7 @@ export default function ProjectCard({
                     {project.technologies.map((tech) => (
                       <span
                         key={tech}
-                        className={`px-3 py-1.5 text-xs font-medium rounded-full ${colors.bg} ${colors.text} border ${colors.border}`}
+                        className={`px-3 py 1.5 text-xs font-medium rounded-full ${colors.bg} ${colors.text} border ${colors.border}`}
                       >
                         {tech}
                       </span>
@@ -410,16 +424,15 @@ export default function ProjectCard({
           )}
         </div>
 
-        {/* Mobile Card - Simple tap behavior */}
+        {/* Mobile Card - With permanent tap state */}
         <div 
-          ref={mobileCardRef}
           className={`lg:hidden bg-gray-900 rounded-2xl border transition-all duration-300 ${
-            mobileExpanded 
+            isCardTapped 
               ? `${colors.border} shadow-xl scale-[1.02] z-10` 
               : 'border-gray-800 shadow-sm'
           }`}
           style={{
-            minHeight: mobileExpanded ? '360px' : '240px',
+            minHeight: getMobileCardHeight(),
             overflow: 'hidden',
           }}
           onClick={handleMobileTap}
@@ -444,8 +457,8 @@ export default function ProjectCard({
               </div>
             </div>
 
-            {/* Show technologies when expanded */}
-            {mobileExpanded && (
+            {/* Show technologies when tapped (permanently) */}
+            {isCardTapped && (
               <>
                 <div className="mb-6 animate-fade-in">
                   <h4 className="font-semibold text-white mb-3 text-sm">
@@ -463,7 +476,7 @@ export default function ProjectCard({
                   </div>
                 </div>
 
-                {/* View Details Button - Only shows when expanded */}
+                {/* View Details Button - Only shows when tapped */}
                 <button
                   onClick={handleOpenMobileDialog}
                   className={`w-full py-3 rounded-xl border ${colors.border} text-sm font-medium ${colors.text} hover:opacity-80 transition-all flex items-center justify-center gap-2 bg-gray-800/50 animate-fade-in`}
@@ -475,8 +488,8 @@ export default function ProjectCard({
             )}
           </div>
 
-          {/* Simple hint when not expanded */}
-          {!mobileExpanded && (
+          {/* Show tap hint when not tapped */}
+          {!isCardTapped && (
             <div className="px-6 pb-4 text-center">
               <div className="flex items-center justify-center gap-1 text-xs text-gray-400">
                 <EyeIcon className="h-3 w-3" />
