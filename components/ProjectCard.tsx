@@ -70,13 +70,12 @@ export default function ProjectCard({ project, index, totalCards = 3, row = 0 }:
   const [isExpanded, setIsExpanded] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false)
-  const [showMobileTools, setShowMobileTools] = useState(false)
   const [isMobileExpanded, setIsMobileExpanded] = useState(false)
-  const [mobileExpandedHeight, setMobileExpandedHeight] = useState<string>('240px')
   const [primaryColor, setPrimaryColor] = useState<ColorKey>('blue')
   const cardRef = useRef<HTMLDivElement>(null)
   const dialogRef = useRef<HTMLDivElement>(null)
   const mobileCardRef = useRef<HTMLDivElement>(null)
+  const mobileContentRef = useRef<HTMLDivElement>(null)
   
   useEffect(() => {
     const colors: ColorKey[] = ['blue', 'purple', 'cyan', 'green', 'orange', 'pink']
@@ -102,23 +101,19 @@ export default function ProjectCard({ project, index, totalCards = 3, row = 0 }:
     }
   }
 
-  const handleMobileTap = () => {
+  const handleMobileToggle = () => {
     if (!isMobileExpanded) {
-      // First tap: expand downward to show tools
+      // First tap: expand to show all tools
       setIsMobileExpanded(true)
-      setShowMobileTools(true)
-      setMobileExpandedHeight('360px') // Same as desktop hover height
     } else {
-      // Second tap when expanded: open dialog
-      setIsMobileDialogOpen(true)
+      // Tap again: collapse reverse way
+      setIsMobileExpanded(false)
     }
   }
 
-  const handleCloseMobileTools = () => {
-    // Collapse upward to original position
-    setIsMobileExpanded(false)
-    setShowMobileTools(false)
-    setMobileExpandedHeight('240px')
+  const handleOpenMobileDialog = () => {
+    setIsMobileDialogOpen(true)
+    setIsMobileExpanded(false) // Collapse if expanded
   }
 
   const handleMouseLeaveExpanded = () => {
@@ -194,11 +189,6 @@ export default function ProjectCard({ project, index, totalCards = 3, row = 0 }:
     return '240px'
   }
 
-  const getMobileCardHeight = () => {
-    if (isMobileExpanded) return mobileExpandedHeight
-    return '240px'
-  }
-
   useEffect(() => {
     if (isExpanded && cardRef.current) {
       const cardRect = cardRef.current.getBoundingClientRect()
@@ -216,17 +206,6 @@ export default function ProjectCard({ project, index, totalCards = 3, row = 0 }:
       document.body.classList.remove('card-expanded')
     }
   }, [isExpanded])
-
-  // Auto-close mobile tools after 3 seconds
-  useEffect(() => {
-    if (showMobileTools && isMobileExpanded) {
-      const timer = setTimeout(() => {
-        handleCloseMobileTools()
-      }, 3000)
-      
-      return () => clearTimeout(timer)
-    }
-  }, [showMobileTools, isMobileExpanded])
 
   // Close mobile dialog when clicking outside
   useEffect(() => {
@@ -412,81 +391,93 @@ export default function ProjectCard({ project, index, totalCards = 3, row = 0 }:
           )}
         </div>
 
-        {/* Mobile Card - Expands downward, collapses upward */}
+        {/* Mobile Card - Fixed position, manual collapse */}
         <div 
           ref={mobileCardRef}
-          className={`lg:hidden bg-gray-900 rounded-2xl border border-gray-800 shadow-lg transition-all duration-300 overflow-hidden ${
-            isMobileExpanded ? 'scale-[1.02] shadow-xl' : 'shadow-sm'
-          }`}
+          className="lg:hidden relative bg-gray-900 rounded-2xl border border-gray-800 shadow-lg transition-all duration-300"
           style={{
-            minHeight: getMobileCardHeight(),
-            transformOrigin: 'top', // Expand from top, collapse to top
+            // Fixed position to prevent shifting
+            transform: 'translateZ(0)', // Hardware acceleration
+            willChange: 'transform', // Optimize for transform
           }}
-          onClick={handleMobileTap}
         >
           <div className={`h-1.5 rounded-t-2xl bg-gradient-to-r ${colors.gradient}`} />
           
-          <div className="p-6">
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex-1 pr-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="p-2 rounded-xl bg-gradient-to-br from-blue-900/20 to-cyan-900/20">
-                    <BoltIcon className="h-5 w-5 text-blue-400" />
+          <div 
+            ref={mobileContentRef}
+            className="overflow-hidden transition-all duration-300"
+            style={{
+              maxHeight: isMobileExpanded ? '500px' : '240px', // Expand downward, collapse upward
+            }}
+          >
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex-1 pr-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="p-2 rounded-xl bg-gradient-to-br from-blue-900/20 to-cyan-900/20">
+                      <BoltIcon className="h-5 w-5 text-blue-400" />
+                    </div>
+                    <h3 className="font-bold text-white line-clamp-1">
+                      {project.title}
+                    </h3>
                   </div>
-                  <h3 className="font-bold text-white line-clamp-1">
-                    {project.title}
-                  </h3>
+                  
+                  <p className="text-gray-300 text-sm leading-relaxed line-clamp-2">
+                    {project.description}
+                  </p>
                 </div>
-                
-                <p className="text-gray-300 text-sm leading-relaxed line-clamp-2">
-                  {project.description}
-                </p>
               </div>
+
+              {/* Always show technologies when expanded */}
+              {isMobileExpanded && (
+                <div className="mb-6 animate-fade-in">
+                  <h4 className="font-semibold text-white mb-3 text-sm">
+                    Technologies Used
+                  </h4>
+                  <div className="flex flex-wrap gap-2">
+                    {project.technologies.map((tech) => (
+                      <span
+                        key={tech}
+                        className={`px-2 py-1 text-xs font-medium rounded-full ${colors.bg} ${colors.text} border ${colors.border}`}
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Show technologies when expanded */}
-            {showMobileTools && isMobileExpanded ? (
-              <div className="mb-4 animate-fade-in">
-                <h4 className="font-semibold text-white mb-2 text-sm">
-                  Technologies Used
-                </h4>
-                <div className="flex flex-wrap gap-1">
-                  {project.technologies.slice(0, 4).map((tech) => (
-                    <span
-                      key={tech}
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${colors.bg} ${colors.text} border ${colors.border}`}
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                  {project.technologies.length > 4 && (
-                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-800 text-gray-300 border border-gray-700">
-                      +{project.technologies.length - 4}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-3 text-center text-xs text-gray-400">
-                  Tap again for full details
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between text-sm text-gray-400">
-                <span className="flex items-center gap-1">
-                  <EyeIcon className="h-3 w-3" />
+            {/* Expand/Collapse button area */}
+            <div className="px-6 pb-4">
+              {!isMobileExpanded ? (
+                <button
+                  onClick={handleMobileToggle}
+                  className={`w-full py-3 rounded-xl border ${colors.border} text-sm font-medium ${colors.text} hover:opacity-80 transition-all flex items-center justify-center gap-2 bg-gray-800/50`}
+                >
+                  <ChevronDownIcon className="h-4 w-4" />
                   <span>Tap to view tools</span>
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Optional: Add a subtle bottom border when expanded to show it can expand more */}
-          {isMobileExpanded && (
-            <div className="px-6 pb-3 animate-fade-in">
-              <div className="text-center text-xs text-gray-500">
-                ↑ Auto-collapses in 3 seconds
-              </div>
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <button
+                    onClick={handleOpenMobileDialog}
+                    className={`w-full py-3 rounded-xl border ${colors.border} text-sm font-medium ${colors.text} hover:opacity-80 transition-all flex items-center justify-center gap-2 bg-gray-800/50`}
+                  >
+                    <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                    <span>View Full Details</span>
+                  </button>
+                  <button
+                    onClick={handleMobileToggle}
+                    className={`w-full py-3 rounded-xl border border-gray-700 text-sm font-medium text-gray-300 hover:opacity-80 transition-all flex items-center justify-center gap-2 bg-gray-800/30`}
+                  >
+                    <ChevronUpIcon className="h-4 w-4" />
+                    <span>Collapse Tools</span>
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         {/* Hover Indicator - Desktop only */}
