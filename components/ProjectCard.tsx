@@ -19,6 +19,8 @@ interface ProjectCardProps {
   index: number
   totalCards: number
   row?: number
+  onNext?: () => void
+  onPrev?: () => void
 }
 
 const colorClasses = {
@@ -68,12 +70,14 @@ const colorClasses = {
 
 type ColorKey = keyof typeof colorClasses
 
-export default function ProjectCard({ project, index, totalCards = 3, row = 0 }: ProjectCardProps) {
+export default function ProjectCard({ project, index, totalCards = 3, row = 0, onNext, onPrev }: ProjectCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false)
+  const [isMobileHovering, setIsMobileHovering] = useState(false)
   const [primaryColor, setPrimaryColor] = useState<ColorKey>('blue')
   const dialogRef = useRef<HTMLDivElement>(null)
+  const mobileCardRef = useRef<HTMLDivElement>(null)
   
   useEffect(() => {
     const colors: ColorKey[] = ['blue', 'purple', 'cyan', 'green', 'orange', 'pink']
@@ -109,6 +113,14 @@ export default function ProjectCard({ project, index, totalCards = 3, row = 0 }:
       setIsHovering(false)
       document.body.classList.remove('card-expanded')
     }
+  }
+
+  const handleMobileCardTouch = () => {
+    // On mobile, show technologies on touch/hold
+    setIsMobileHovering(true)
+    setTimeout(() => {
+      setIsMobileHovering(false)
+    }, 3000) // Show for 3 seconds
   }
 
   const getExpansionStyles = () => {
@@ -378,10 +390,12 @@ export default function ProjectCard({ project, index, totalCards = 3, row = 0 }:
           )}
         </div>
 
-        {/* Mobile Card - Simplified */}
+        {/* Mobile Card - With hover-like behavior */}
         <div 
+          ref={mobileCardRef}
           className="lg:hidden bg-gray-900 rounded-2xl border border-gray-800 shadow-lg transition-all duration-300 cursor-pointer"
           onClick={handleMobileDialogToggle}
+          onTouchStart={handleMobileCardTouch}
         >
           <div className={`h-1.5 rounded-t-2xl bg-gradient-to-r ${colors.gradient}`} />
           
@@ -403,25 +417,57 @@ export default function ProjectCard({ project, index, totalCards = 3, row = 0 }:
               </div>
             </div>
 
-            {/* Technologies preview on mobile */}
-            <div className="flex flex-wrap gap-1 mb-4">
-              {project.technologies.slice(0, 3).map((tech) => (
-                <span
-                  key={tech}
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${colors.bg} ${colors.text} border ${colors.border}`}
-                >
-                  {tech}
-                </span>
-              ))}
-              {project.technologies.length > 3 && (
-                <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-800 text-gray-300 border border-gray-700">
-                  +{project.technologies.length - 3}
-                </span>
-              )}
-            </div>
+            {/* Technologies preview on mobile - Show on touch/hold */}
+            {isMobileHovering ? (
+              <div className="mb-4 animate-fade-in">
+                <h4 className="font-semibold text-white mb-2 text-sm">
+                  Technologies Used
+                </h4>
+                <div className="flex flex-wrap gap-1">
+                  {project.technologies.slice(0, 4).map((tech) => (
+                    <span
+                      key={tech}
+                      className={`px-2 py-1 text-xs font-medium rounded-full ${colors.bg} ${colors.text} border ${colors.border}`}
+                    >
+                      {tech}
+                    </span>
+                  ))}
+                  {project.technologies.length > 4 && (
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-800 text-gray-300 border border-gray-700">
+                      +{project.technologies.length - 4}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-wrap gap-1 mb-4">
+                {project.technologies.slice(0, 3).map((tech) => (
+                  <span
+                    key={tech}
+                    className={`px-2 py-1 text-xs font-medium rounded-full ${colors.bg} ${colors.text} border ${colors.border}`}
+                  >
+                    {tech}
+                  </span>
+                ))}
+                {project.technologies.length > 3 && (
+                  <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-800 text-gray-300 border border-gray-700">
+                    +{project.technologies.length - 3}
+                  </span>
+                )}
+              </div>
+            )}
 
             <div className="flex items-center justify-between text-sm text-gray-400">
-              <span>Tap for details</span>
+              <span className="flex items-center gap-1">
+                {isMobileHovering ? (
+                  <>
+                    <EyeIcon className="h-3 w-3" />
+                    <span>Release to open</span>
+                  </>
+                ) : (
+                  <span>Tap & hold for tools</span>
+                )}
+              </span>
               <ChevronRightIcon className="h-4 w-4" />
             </div>
           </div>
@@ -438,7 +484,7 @@ export default function ProjectCard({ project, index, totalCards = 3, row = 0 }:
         )}
       </div>
 
-      {/* Mobile Dialog Overlay - Like Experience Section */}
+      {/* Mobile Dialog Overlay - Like Experience Section with Next/Prev */}
       {isMobileDialogOpen && (
         <div 
           className="fixed inset-0 bg-black/80 z-50 lg:hidden flex items-center justify-center p-4 backdrop-blur-sm"
@@ -547,11 +593,29 @@ export default function ProjectCard({ project, index, totalCards = 3, row = 0 }:
                 </div>
               </div>
 
-              {/* Navigation hint */}
-              <div className="pt-6 border-t border-gray-700/50 text-center">
-                <p className="text-gray-400 text-sm">
-                  Swipe left/right or use arrows to navigate projects
-                </p>
+              {/* Navigation buttons - Added next/prev like Experience section */}
+              <div className="pt-6 border-t border-gray-700/50 flex justify-between items-center">
+                <button
+                  onClick={onPrev}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl ${colors.bg} ${colors.text} hover:opacity-80 transition-all border ${colors.border}`}
+                  disabled={!onPrev}
+                >
+                  <ChevronLeftIcon className="h-4 w-4" />
+                  <span className="text-sm font-medium">Previous</span>
+                </button>
+                
+                <div className="flex items-center gap-1">
+                  <div className={`h-2 w-8 rounded-full ${colors.bg}`} />
+                </div>
+                
+                <button
+                  onClick={onNext}
+                  className={`flex items-center gap-2 px-4 py-3 rounded-xl ${colors.bg} ${colors.text} hover:opacity-80 transition-all border ${colors.border}`}
+                  disabled={!onNext}
+                >
+                  <span className="text-sm font-medium">Next</span>
+                  <ChevronRightIcon className="h-4 w-4" />
+                </button>
               </div>
             </div>
           </div>
